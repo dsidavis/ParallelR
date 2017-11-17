@@ -23,15 +23,10 @@ class: center, middle
 
 # Introduction to Parallel Computing in R
 
-<div>
-<div>
-    Duncan Temple Lang <br/>
-    <!-- 
-    Director, Data Science Initiative<br/>
-    Professor, Statistics	<br/>
-    -->
-</div>
-</div>
+
+## [https://github.com/dsidavis/ParallelR](https://github.com/dsidavis/ParallelR)
+
+### Duncan Temple Lang
 
 <div style="clear: both"/>
 
@@ -189,9 +184,11 @@ time ls *bz2 | parallel -j22 "bunzip2 -c {} | wc -l" | paste -sd+ - | bc
    + slurm
 
 1. See <a href="">Bill Broadley's talk</a>.
+
+1. [slurmJob.R](slurmJob.R) and [slurmJob.sh](slurmJob.sh)
 ---
 
-# Good General Practices Helping Paralle Computing
+# Good General Practices Helping Parallel Computing
 
 1. Since we will be running the "same" code in parallel
    + in different R  sessions, and
@@ -386,6 +383,15 @@ A = mccollect(T1)
 ---
 
 # pvec
++  Take a vector and performs element-wise operations - IN PARALLEL
++ `pvec(x, fun, ...)`
++ fun must be  a vectorized function.
++ Different from mclapply()
+   + break vector into chunks,
+   + send each chunk to a worker
+   + fun(chunk) is already vectorized because fun is.
++ Often fun is already fast enough and the overhead of parallelism doesn't make the task faster.
++ But useful when fun is computationally intensive.
 
 
 ---
@@ -484,6 +490,34 @@ clusterEvalQ()
 1. These are separate copies.
    + Any changes in one worker or the master is *NOT* seen by the other workers/master.
 
+
+---
+
+# clusterCall()
+
+---
+
+# Clus
+
++ clusterApply, clusterApplyLB, parLapply
+
++ clusterApply - round-robin
++ clusterApplyLB - load balancing
+   + dispatches next task to worker that has just completed task
+   + allows for tasks that take different times
+     + either computationally different, or
+     + worker is slower/faster than others
+
+---
+# Other Cluster Apply Functions
+
++ parApply
++ parLapply
++ parSapply
++ parRapply
++ parCapply
++ parLapplyLB
++ parSapplyLB
 ---
 
 # Subset of Cluster
@@ -492,8 +526,24 @@ clusterEvalQ()
    + Then can send tasks to those workers.
 
 ```
-cl = makeCluster()
+cl = makeCluster(hostInfoList)
 ```
+
+```
+host = sapply(cl, `[[`, "host")
+hilbert = cl[ host == "hilbert" ]
+clusterCall(hilbert)
+clusterApply(hilbert, files, fun)
+```
++ Really want to send task to these, and not wait.
+   + like mcparallel() and mccollect()
+
+
+---
+# Shared Resources
+1. CPU
+1. Memory
+1. Disk
 
 ---
 # Network File Systems (NFS)
@@ -507,11 +557,10 @@ cl = makeCluster()
    worker/data combination.
 
 ---
-
 <!--
      Avoid getting the same values across workers.
      And also how to ensure get reproducible results
-   -->
+-->
 # Random Number Generation
 
 + Consider
@@ -520,6 +569,7 @@ fortunes::fortune()
 mclapply(1:10, function(i) 1/median(rnorm(1000)))
 ```
 
++ What could go wrong?
     
 ---
 # Resources
@@ -529,7 +579,7 @@ mclapply(1:10, function(i) 1/median(rnorm(1000)))
 1. Parallel Computing for Data Science..., Norm Matloff
 1. [Programming with Big Data in R (pbdR)](http://rbigdata.github.io/)
 1. [CRAN Task View on HPC](https://cran.r-project.org/web/views/HighPerformanceComputing.html)
-
+1. ...
 ---
 
 

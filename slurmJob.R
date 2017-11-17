@@ -6,7 +6,7 @@ jobNum = as.integer(args[1])
 
 dir = "~/Data/Airlines"
 
-input = list.files(dir, pattern = "csv")[jobNum]
+input = list.files(dir, pattern = "csv", full = TRUE)[jobNum]
 
 d = read.csv(input)
 fit = lm(y ~ ., d)
