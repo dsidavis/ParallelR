@@ -219,22 +219,22 @@ time ls *bz2 | parallel -j22 "bunzip2 -c {} | wc -l" | paste -sd+ - | bc
 
 + Fit a model and get the coefficients:
 ```
-coef(lm(mpg ~ wt + cyl + am, mtcars[sample(nrow(mtcars)), ]))
+coef(lm(mpg ~ wt + cyl + am, mtcars[sample(nrow(mtcars), replace = TRUE), ]))
 ```
 
 + Bootstrap
 ```
-replicate(500, coef(lm(mpg ~ wt + cyl + am, mtcars[sample(nrow(mtcars)), ])))
+replicate(500, coef(lm(mpg ~ wt + cyl + am, mtcars[sample(nrow(mtcars), replace = TRUE), ])))
 ```
 
 
 + Parallel bootstrap with mclapply()
 ```
 tm = lapply(1:8,
-             function(nc)
-               system.time(
-                   mclapply(1:500, function(i) coef(lm(mpg ~ wt + cyl + am,
-                                                        mtcars[sample(nrow(mtcars)), ])),
+            function(nc)
+              system.time(
+                mclapply(1:500, function(i) coef(lm(mpg ~ wt + cyl + am,
+                                                    mtcars[sample(nrow(mtcars), replace = TRUE), ])),
                                   mc.cores = nc)))
 ```
 
@@ -474,8 +474,24 @@ cl = makeCluster(c(rep(list(hilbert), 2),
 # Run Command on All Workers
 
 +  clusterEvalQ()
+   + Use to evaluate the same command on all workers
+
++ Often used to initialize the workers
 ```
-clusterEvalQ()
+clusterEvalQ(library(MASS))
+```
+
++ To source R code or change to a directory
+```
+clusterEvalQ(source("myCode.R"))
+clusterEvalQ(setwd("~/ProjectDirectory"))
+```
+   + Remember, these files or directories must be on all workers.
+   + May be different location for each worker, so need to be careful.
+
++ Remove a variable on each worker when it is no longer needed
+```
+clusterEvalQ(rm(x, y, z))
 ```
 
 ---
@@ -495,9 +511,11 @@ clusterEvalQ()
 
 # clusterCall()
 
+
+
 ---
 
-# Clus
+# Apply functions for Cluster
 
 + clusterApply, clusterApplyLB, parLapply
 
@@ -511,13 +529,11 @@ clusterEvalQ()
 ---
 # Other Cluster Apply Functions
 
-+ parApply
-+ parLapply
-+ parSapply
-+ parRapply
-+ parCapply
-+ parLapplyLB
-+ parSapplyLB
++ parApply - apply() for matrices
++ parLapply - parallel lapply()
++ parSapply - parallel sapply()
++ parLapplyLB, parSapplyLB  - load balancing version
++ parRapply, parCapply - Row and Column apply.
 ---
 
 # Subset of Cluster
@@ -570,6 +586,18 @@ mclapply(1:10, function(i) 1/median(rnorm(1000)))
 ```
 
 + What could go wrong?
+
++ Fortunately, it doesn't because mclapply() fixes matters.
++ However, w/o this  fix,
+   + The master will set .Random.seed because fortune() generates a random number
+   + Then mclapply() would create cloned workers
+   + Each worker would see the **same** .Random.seed object
+   + So would generate the same stream of random numbers and do exactly the same computations
+   + We would get the same result from all workers!
+
++ mclapply() avoids this by setting the seed in each worker separately.
+   + Can control this.
+
     
 ---
 # Resources
